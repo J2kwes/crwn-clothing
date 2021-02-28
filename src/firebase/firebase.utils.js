@@ -12,6 +12,38 @@ const config = {
     measurementId: "G-GCP1F0RB35"
 };
 
+// Function gets called in app.js when onAuthStateChanged gets called
+export const createUserProfileDocument = async (userAuth, additonalData) => {
+    // Check if userAuth exists otherwise exit function
+    if (!userAuth) return;
+
+    // Get userAuth id and snapshot by id
+    const userRef = firestore.doc(`users/${userAuth.uid}`);
+    const snapShot = await userRef.get();
+
+    // If snapshot does not exist (meaning that the user does not exist)
+    // create user in the database users collection with the name email 
+    // and other properties collected from the userAuth object
+    if (!snapShot.exists) {
+        const { displayName, email } = userAuth;
+        const createdAt = new Date();
+
+        try {
+            await userRef.set({
+                displayName,
+                email,
+                createdAt,
+                ...additonalData
+            })
+        } catch (err) {
+            console.log('error creating user', err.message);
+        }
+    }
+
+    // return userRef for later use in the project 
+    return userRef;
+}
+
 try {
     firebase.initializeApp(config)
 } catch (err) {
@@ -21,7 +53,7 @@ try {
 }
 
 export const auth = firebase.auth();
-export const firesotre = firebase.firestore();
+export const firestore = firebase.firestore();
 
 const provider = new firebase.auth.GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
